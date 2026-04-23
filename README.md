@@ -6,6 +6,14 @@ This project is a personal exploration and learning journey into **Laravel Rever
 
 The development of this project focused on implementing different broadcasting strategies provided by Laravel Reverb. While secondary optimizations like reference-based tracking were included to keep the database clean, the main emphasis remained on the WebSocket integration.
 
+## Preview
+
+You can watch the preview video of this project.
+
+
+https://github.com/user-attachments/assets/69b33320-2ac5-48e0-8613-843acf09f33d
+
+
 ### Broadcasting Implementation
 
 To explore the full capabilities of Reverb, I implemented three distinct targeting methods:
