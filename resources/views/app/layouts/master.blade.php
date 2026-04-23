@@ -7,6 +7,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'My App')</title>
     <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet">
     @vite(['resources/js/app.js'])
     @stack('styles')
 </head>
@@ -63,6 +64,9 @@
             @yield('content')
         </div>
     </main>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-20 right-6 z-[60] flex flex-col gap-3 pointer-events-none"></div>
 
     <!-- Modal Component -->
     @include('app.layouts.partials.notification-modal')
@@ -124,43 +128,98 @@
                     .catch(error => console.error('Error:', error));
             };
 
+            // UI Helpers: Toast System
+            window.showToast = function(title, body) {
+                const container = document.getElementById('toast-container');
+                const toast = document.createElement('div');
+                toast.className =
+                    "pointer-events-auto bg-white shadow-2xl rounded-xl p-4 min-w-[300px] max-w-[400px] transform translate-x-full transition-all duration-500 ease-out opacity-0";
+
+                toast.innerHTML = `
+                    <div class="flex gap-3">
+                        <div class="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="text-sm font-bold text-gray-900">${title}</h4>
+                            <p class="text-xs text-gray-500 mt-1 line-clamp-2">${body}</p>
+                        </div>
+                        <button onclick="this.parentElement.parentElement.remove()" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+                `;
+
+                container.appendChild(toast);
+
+                // Trigger animation
+                setTimeout(() => {
+                    toast.classList.remove('translate-x-full', 'opacity-0');
+                }, 100);
+
+                // Auto hide
+                setTimeout(() => {
+                    if (toast.parentElement) {
+                        toast.classList.add('translate-x-full', 'opacity-0');
+                        setTimeout(() => toast.remove(), 500);
+                    }
+                }, 5000);
+            };
+
             // Event Listeners
+
+            // Public notifications
             window.Echo.channel("public-messages")
                 .listen(".all.notification", (event) => {
+                    window.showToast(event.title, event.body); // Show Preview Toast
                     window.showPublicModal(event.title, event.body);
                 });
 
             @auth
+            // User notifications
             window.Echo.private("user.{{ auth()->id() }}")
                 .listen(".user.notification", (event) => {
+                    window.showToast(event.title, event.body); // Show Preview Toast
                     const countEl = document.getElementById('notification-count');
                     const listEl = document.getElementById('notification-list');
                     const badgeEl = document.getElementById('inbox-badge');
 
-                    if (countEl) {
-                        const currentCount = parseInt(countEl.innerText) || 0;
-                        countEl.innerText = (currentCount + 1) + ' New';
-                    }
-
-                    if (badgeEl) {
-                        badgeEl.classList.remove('hidden');
-                    } else {
-                        const inboxBtn = document.getElementById('inbox-button');
-                        if (inboxBtn) {
-                            const newBadge = document.createElement('span');
-                            newBadge.id = 'inbox-badge';
-                            newBadge.className =
-                                'absolute top-1 right-1 block h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white';
-                            inboxBtn.appendChild(newBadge);
-                        }
-                    }
-
                     if (listEl) {
+                        // PREVENT DUPLICATES: Check if notification already exists in the list
+                        if (listEl.querySelector(`[data-id="${event.id}"]`)) {
+                            return;
+                        }
+
+                        // Only increment counter if it's a new unique notification
+                        if (countEl) {
+                            const currentCount = parseInt(countEl.innerText) || 0;
+                            countEl.innerText = (currentCount + 1) + ' New';
+                        }
+
+                        if (badgeEl) {
+                            badgeEl.classList.remove('hidden');
+                        } else {
+                            const inboxBtn = document.getElementById('inbox-button');
+                            if (inboxBtn) {
+                                const newBadge = document.createElement('span');
+                                newBadge.id = 'inbox-badge';
+                                newBadge.className =
+                                    'absolute top-1 right-1 block h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white';
+                                inboxBtn.appendChild(newBadge);
+                            }
+                        }
+
                         const newNotif = document.createElement('div');
                         newNotif.className =
                             'p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer bg-blue-50/30';
-                        newNotif.setAttribute('onclick',
-                            `markAsRead(${event.id}, '${event.title}', '${event.body}', this)`);
+                        newNotif.setAttribute('data-id', event.id);
+
+                        // Use Event Listener instead of onclick attribute to avoid syntax errors with quotes
+                        newNotif.addEventListener('click', function() {
+                            markAsRead(event.id, event.title, event.body, this);
+                        });
 
                         newNotif.innerHTML = `
                                 <div class="flex justify-between items-start">

@@ -23,7 +23,6 @@ class UserNotificationFactory extends Factory
             'type' => "user",
             'title' => $this->faker->sentence,
             'body' => $this->faker->paragraph,
-            'read_at' => $this->faker->boolean ? $this->faker->dateTime : null,
         ];
     }
 }

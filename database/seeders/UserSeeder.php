@@ -22,6 +22,7 @@ class UserSeeder extends Seeder
             $role = $i == 0 ? 'admin' : ($i >= 1 && $i <= 5 ? 'manager' : 'employee');
             User::factory()->create([
                 'email' => "user$i@gmail.com",
+                'name' => ucwords($role) . ' ' . $i,
                 'role' => $role,
             ]);
         }

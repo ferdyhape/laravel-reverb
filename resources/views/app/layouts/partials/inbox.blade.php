@@ -3,7 +3,7 @@
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
         </svg>
-        @if(auth()->user()->unreadNotifications->count() > 0)
+        @if(auth()->user()->unread_notifications_count > 0)
             <span class="absolute top-1 right-1 block h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" id="inbox-badge"></span>
         @endif
     </button>
@@ -15,17 +15,19 @@
         <div class="p-4 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
             <h3 class="font-bold text-gray-900">Notifications</h3>
             <span class="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full" id="notification-count">
-                {{ auth()->user()->unreadNotifications->count() }} New
+                {{ auth()->user()->unread_notifications_count }} New
             </span>
         </div>
         <div class="max-h-96 overflow-y-auto" id="notification-list">
-            @forelse(auth()->user()->notifications->take(10) as $notification)
-                <div onclick="markAsRead({{ $notification->id }}, '{{ $notification->title }}', '{{ $notification->body }}', this)" 
-                    class="p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer {{ !$notification->read_at ? 'bg-blue-50/30' : '' }}"
-                    data-id="{{ $notification->id }}">
+            @forelse(auth()->user()->recent_notifications as $notification)
+                <div onclick="markAsRead(this.dataset.id, this.dataset.title, this.dataset.body, this)" 
+                    class="p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer {{ !$notification->is_read ? 'bg-blue-50/30' : '' }}"
+                    data-id="{{ $notification->id }}"
+                    data-title="{{ $notification->title }}"
+                    data-body="{{ $notification->body }}">
                     <div class="flex justify-between items-start">
                         <p class="text-sm font-bold text-gray-900">{{ $notification->title }}</p>
-                        @if(!$notification->read_at)
+                        @if(!$notification->is_read)
                             <span class="w-2 h-2 bg-blue-600 rounded-full mt-1.5"></span>
                         @endif
                     </div>

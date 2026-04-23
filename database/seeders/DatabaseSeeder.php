@@ -21,6 +21,6 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
         ]);
 
-        Notification::factory(10)->create();
+        // Notification::factory(10)->create();
     }
 }
