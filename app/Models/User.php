@@ -29,4 +29,19 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class)->latest();
+    }
+
+    public function unreadNotifications()
+    {
+        return $this->hasMany(Notification::class)->whereNull('read_at')->latest();
+    }
+
+    public function readNotifications()
+    {
+        return $this->hasMany(Notification::class)->whereNotNull('read_at')->latest();
+    }
 }
